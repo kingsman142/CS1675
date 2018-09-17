@@ -1,0 +1,39 @@
+James Hahn
+Intro to Machine Learning
+Tu/Th 11am-12:15pm
+
+=========
+Problem 1
+=========
+Product Recommendation
+ - Features?
+	- price of the product
+	- average buying price of customer
+	- last item bought by customer
+	- distribution of categories of products bought by customer
+	- age of customer
+	- gender of customer
+	- category of the product
+ - Labels?
+	- 0 or 1, whether a given product will be recommended for that specific customer
+ - How to collect data?
+	- For a website like Amazon, this is relatively simple.  You have access to all customer demographic data (age, gender), as well as the products being sold on Amazon.com, so there's no need to go out of your way to collect products outside of the website.  Basically, the only data you will need to keep track of will be any order history for each individual customer.
+ - Why might the problem turn out to be challenging?
+	- For a company like Amazon, there are so many products to consider.  You would need to effectively limit the number of products you're considering for recommendation to a given customer, because then you could technically have an thousands of objects worth recommending and you'd have to limit your choices even further.  Also, there are always more features that are available, and even meta-features that could be observed to fine-tune your model even further.  However, this could dramatically increase the dimensionality of your feature vectors and it would take wayyyy too long to train of millions of products within the service.
+
+=========
+Problem 2
+=========
+Speech-to-text
+ - Features
+	- Average frequency of the audio clip
+	- Period of the audio clip
+	- Amplitude of the audio clip
+	- histogram of the frequency data
+ - Labels?
+	- Feature vector of probabilities of roots of words
+		- If there are N words in the language, then the output vector is Nx1 where each word has a probability of showing up in that audio clip
+ - How to collect data?
+	- Determine a set of words you want participants to say.  Then, record an audio clip for each word.  So, you have the ground truth label for each sample, and it's then a supervised learning task.  So, you can pre-process the audio clip, pass that data in as a feature vector, and get the probabilistic output.
+ - Why might the problem turn out to be challenging?
+	- We might need to figure out how to segment the data for each "word" that is spoken.  So, the pre-processing might be a bit difficult before you pass in the data to predict each word individually.  Also, languages are very diverse.  So, our N may be extremely large and it might force the probabilities to severely small and it'll be hard to distinguish each word from each other, thus causing more problems.
