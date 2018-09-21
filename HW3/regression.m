@@ -1,5 +1,4 @@
 wineData = dlmread("winequality-red.csv", ";");
-disp(size(wineData));
 [trainInd, testInd, valInd] = dividerand(size(wineData, 1), 0.5, 0.5, 0.0);
 
 [trainX, trainY, testX, testY] = preprocessData(trainInd, testInd, wineData);
@@ -9,7 +8,7 @@ closed_pred = lr_predict(testX, closed_w);
 closed_score = score(closed_pred, testY);
 fprintf("LR Closed Score: %.4f\n", closed_score);
 
-gradient_w = lr_solve_gd(trainX, trainY, 50, 0.1);
+gradient_w = lr_solve_gd(trainX, trainY, 100000, 0.000001);
 gradient_pred = lr_predict(testX, gradient_w);
 gradient_score = score(gradient_pred, testY);
 fprintf("LR Gradient Score: %.4f\n", gradient_score);
