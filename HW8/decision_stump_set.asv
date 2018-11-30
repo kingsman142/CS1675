@@ -1,0 +1,92 @@
+function [correct_train, y_pred] = decision_stump_set(X_train, y_train, w_train, X_test)
+    D = size(X_train, 2); % number of features in our dataset
+    featureThresholds = zeros(D, 10); % each feature has 10 thresholds to check
+    
+    % dimension, threshold value, and over/under 'flip/side' of the training set with the lowest weighted error
+    bestDimension = 0;
+    bestThreshold = 0;
+    bestOverUnder = 0;
+    bestError = 0;
+    
+    for i = 1:D % for each feature
+        thresholds = get_thresholds(X_train, i); % given the range of this feature's values, find 10 thresholds
+
+        [bestThresholdNum, bestOverUnderNum, bestClassifierError] = get_best_threshold(X_train, y_train, w_train, i, thresholds');
+        if bestClassifierError < bestError || bestError == 0 % we found a threshold on a feature with a new best error rate!
+            bestError = bestClassifierError;
+            bestOverUnder = bestOverUnderNum;
+            bestThreshold = thresholds(bestThresholdNum, :);
+            bestDimension = i;
+        end
+    end
+    
+    y_pred = predict_samples(X_test, bestDimension, bestThreshold, bestOverUnder); % predict the testing samples
+    
+    if bestOverUnder == 1 % over/under => positive/negative
+        correct_train = (X_train(:, bestDimension) >= bestThreshold) == y_train; % 'positive' samples that are predicted as 'positive'
+        correct_train = ((X_train(:, bestDimension) < bestThreshold) == -y_train) | correct_train; % 'negative' samples that are predicted as 'positive', then join this with the already created correct_train
+    else % overUnder == 2 -- over/under => negative/positive
+        correct_train = (X_train(:, bestDimension) >= bestThreshold) == -y_train;
+        correct_train = ((X_train(:, bestDimension) < bestThreshold) == y_train) | correct_train; % 'negative' samples that are predicted as 'positive', then join this with the already created correct_train
+    end
+    
+end
+
+function y_pred = predict_samples(X_test, dimension, threshold, overUnder)
+    if overUnder == 1 % over/under => positive/negative
+        y_pred = X_test(:, dimension) >= threshold; % positive samples = 1; negative samples = 0
+    else % overUnder == 2 -- over/under => negative/positive
+        y_pred = X_test(:, dimension) < threshold; % positive samples = 1; negative samples = 0
+    end
+    y_pred = y_pred .* 2; % positive samples = 2; negative samples = 0
+    y_pred = y_pred - 1; % positive samples = 1; negative samples = -1
+end
+
+function [bestThresholdNum, bestOverUnderNum, bestError] = get_best_threshold(X_train, y_train, weights, dimension, thresholds)
+    numThresholds = size(thresholds, 2);
+    bestThresholdNum = 0;
+    bestOverUnderNum = 0;
+    bestError = 0;
+    
+    for i = 1:numThresholds
+        threshold = thresholds(:, i);
+        for j = 1:2
+            if j == 1 % over/under => positive/negative
+                positives = X_train(:, dimension) >= threshold;
+                negatives = -(X_train(:, dimension) < threshold);
+                posNegCombined = positives + negatives;
+                incorrect = double(posNegCombined ~= y_train);
+                error = dot(incorrect, weights);
+                
+                if error < bestError || bestError == 0
+                    bestThresholdNum = i;
+                    bestOverUnderNum = j;
+                    bestError = error;
+                end
+            else % j == 2 -- over/under => negative/positive
+                positives = X_train(:, dimension) < threshold;
+                negatives = -(X_train(:, dimension) >= threshold);
+                posNegCombined = positives + negatives;
+                incorrect = double(posNegCombined ~= y_train);
+                error = dot(incorrect, weights);
+                
+                if error < bestError || bestError == 0
+                    bestThresholdNum = i;
+                    bestOverUnderNum = j;
+                    bestError = error;
+                end
+            end
+        end
+    end
+end
+
+function thresholds = get_thresholds(X_train, dimension)
+    numThresholds = 10.0;
+    minVal = min(X_train(:, dimension));
+    maxVal = max(X_train(:, dimension));
+    step = (maxVal - minVal) / (numThresholds + 1.0);
+    %fprintf('on dimension %d, min = %.4f, max = %.4f, step = %.4f\n', dimension, minVal, maxVal, step);
+    
+    thresholds = minVal:step:maxVal;
+    thresholds = thresholds(2:11)';
+end

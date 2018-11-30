@@ -1,0 +1,94 @@
+pimaData = csvread('pima.data');
+pimaData = pimaData(randperm(size(pimaData, 1)), :);
+
+for iters = [10, 20, 50] %[10, 20, 50]
+    %acc = crossFoldValidation(pimaData, iters);
+    %fprintf('Average accuracy across all folds for iters = %d is %.4f\n', iters, acc);
+end
+
+test = data(1*76-75 : 1*76, :); % test set = 76 samples
+train = extractTrain(data, 1);
+[testX, testY] = splitXy(test); % split into X and Y
+[trainX, trainY] = splitXy(train); % split into X and Y
+
+[means, stds] = computeMeanStd(trainX); % calculate means and stds for future normalization
+trainX = normalizeData(trainX, means, stds);
+testX = normalizeData(testX, means, stds);
+[correct_train, y_pred] = decision_stump_set(X_train, y_train, w_train, X_test);
+pre
+
+function cumAcc = crossFoldValidation(data, iters)
+    cumAcc = 0.0;
+    for i = 1:10 % 10 folds
+        test = data(i*76-75 : i*76, :); % test set = 76 samples
+        train = extractTrain(data, i);
+        [testX, testY] = splitXy(test); % split into X and Y
+        [trainX, trainY] = splitXy(train); % split into X and Y
+        
+        [means, stds] = computeMeanStd(trainX); % calculate means and stds for future normalization
+        trainX = normalizeData(trainX, means, stds);
+        testX = normalizeData(testX, means, stds);
+        
+        pred = adaboost(trainX, trainY, testX, iters);
+        acc = computeAccuracy(testY, pred); % compute the score, or accuracy
+        cumAcc = cumAcc + acc;
+    end
+    cumAcc = cumAcc / 10.0; % average accuracy cross all 10 folds
+end
+
+% Compute accuracy as number of correctly predicted samples out of all test
+% samples
+function acc = computeAccuracy(testY, predY)
+    correct = 0;
+    N = size(testY, 1);
+    for i = 1:N
+        if testY(i) == predY(i)
+            correct = correct + 1;
+        end
+    end
+    
+    acc = correct / N;
+end
+
+% Extract the training dataset where fold i is the testing set
+function train = extractTrain(data, i)
+    beginTestIndex = i*76-75;
+    endTestIndex = i*76;
+    if beginTestIndex == 1 % folds 1 - 9
+        train = data(endTestIndex+1 : end-8, :);
+    elseif beginTestIndex == 760-75 % fold 0
+        train = data(1:beginTestIndex-1, :);
+    else % all folds surrounding test set fold i
+        train = data(1:beginTestIndex-1, :);
+        train = [train; data(endTestIndex+1 : end-8, :)];
+    end
+end
+
+% Extract first D-1 dimensions for X and Dth dimension for Y
+function [X, y] = splitXy(data)
+    D = size(data, 2);
+    X = data(:, 1:D-1);
+    y = data(:, D);
+end
+
+% Normalize data given means and standard deviations of training set
+function newData = normalizeData(data, means, stds)
+    N = size(data, 1);
+    D = size(means, 1);
+    newData = zeros(N, D);
+    for i = 1:D
+        newCol = (data(:, i) - means(i)) / stds(i);
+        newData(:, i) = newCol;
+    end
+end
+
+% Calculate the mean and std of each feature, or column, of the data
+function [means, stds] = computeMeanStd(trainData)
+    D = size(trainData, 2);
+    means = zeros(D, 1);
+    stds = zeros(D, 1);
+    for i = 1:D
+        means(i) = mean(trainData(:, i));
+        stds(i) = std(trainData(:, i));
+    end
+end
