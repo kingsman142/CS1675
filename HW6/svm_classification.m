@@ -1,23 +1,14 @@
-pimaData = csvread('pima.data');
-pimaData = pimaData(randperm(size(pimaData, 1)), :);
+pimaData = csvread('pima.data'); % read data
+pimaData = pimaData(randperm(size(pimaData, 1)), :); % randomize data
+pimaData = convertZerosToNegativeOneClasses(pimaData); % convert samples with class 0 to class -1
 
-for iters = [10, 20, 50] %[10, 20, 50]
-    %acc = crossFoldValidation(pimaData, iters);
-    %fprintf('Average accuracy across all folds for iters = %d is %.4f\n', iters, acc);
+for c = -4:1:0
+    acc = crossFoldValidation(pimaData, 10^c);
+    fprintf('Average accuracy across all folds for C = %d is %.4f\n', 10^c, acc);
 end
 
-test = data(1*76-75 : 1*76, :); % test set = 76 samples
-train = extractTrain(data, 1);
-[testX, testY] = splitXy(test); % split into X and Y
-[trainX, trainY] = splitXy(train); % split into X and Y
-
-[means, stds] = computeMeanStd(trainX); % calculate means and stds for future normalization
-trainX = normalizeData(trainX, means, stds);
-testX = normalizeData(testX, means, stds);
-[correct_train, y_pred] = decision_stump_set(X_train, y_train, w_train, X_test);
-pre
-
-function cumAcc = crossFoldValidation(data, iters)
+% Perform K-fold cross-validation
+function cumAcc = crossFoldValidation(data, C)
     cumAcc = 0.0;
     for i = 1:10 % 10 folds
         test = data(i*76-75 : i*76, :); % test set = 76 samples
@@ -29,25 +20,36 @@ function cumAcc = crossFoldValidation(data, iters)
         trainX = normalizeData(trainX, means, stds);
         testX = normalizeData(testX, means, stds);
         
-        pred = adaboost(trainX, trainY, testX, iters);
+        [pred] = svm_quadprog(trainX, trainY, testX, C); % solve the quadratic optimization problem and predict the test samples
         acc = computeAccuracy(testY, pred); % compute the score, or accuracy
         cumAcc = cumAcc + acc;
     end
     cumAcc = cumAcc / 10.0; % average accuracy cross all 10 folds
 end
 
-% Compute accuracy as number of correctly predicted samples out of all test
-% samples
+% Compute accuracy as number of correctly predicted samples out of all test samples
 function acc = computeAccuracy(testY, predY)
-    correct = 0;
-    N = size(testY, 1);
+    correct = 0; % number of correct samples
+    N = size(testY, 1); % number of samples
     for i = 1:N
-        if testY(i) == predY(i)
+        if testY(i) == predY(i) % correctly predicted sample
             correct = correct + 1;
         end
     end
     
-    acc = correct / N;
+    acc = correct / N; % compute accuracy
+end
+
+% Due to the nature of the SVM, we want to make sure the only two classes are -1 and +1, so convert class 0 to -1
+function data = convertZerosToNegativeOneClasses(data)
+    N = size(data, 1);
+    D = size(data, 2);
+    for i = 1:N
+        class = data(i,D);
+        if class == 0
+            data(i,D) = -1; % convert class to -1 in the dataset
+        end
+    end
 end
 
 % Extract the training dataset where fold i is the testing set
