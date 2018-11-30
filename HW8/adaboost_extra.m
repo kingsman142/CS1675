@@ -1,4 +1,4 @@
-function y_pred_final = adaboost(X_train, y_train, X_test, iters)
+function y_pred_final = adaboost_extra(X_train, y_train, X_test, iters)
     N = size(X_train, 1); % number of training samples
     M = size(X_test, 1); % number of testing samples
     
@@ -13,11 +13,6 @@ function y_pred_final = adaboost(X_train, y_train, X_test, iters)
         I = -(correct_train - 1); % incorrectly classified samples become 1; correctly classified samples become 0
         epsilon = dot(w, I) / sum(w);
         alpha = log((1.0 - epsilon) / (epsilon + 0.00000001)); % add the small value to epsilon so the denominator is never 0
-        if alpha < 0 % don't allow negative alpha values
-            alpha = 0;
-            alphas(m, :) = alpha; % keep the alpha value for this iteration of hypotheses
-            break;
-        end
         alphas(m, :) = alpha; % keep the alpha value for this iteration of hypotheses
         
         w = w .* exp(alpha * I);

@@ -1,13 +1,15 @@
 pimaData = csvread('pima.data');
 pimaData = pimaData(randperm(size(pimaData, 1)), :);
 
-for iters = [10, 20, 50]
-    acc = crossFoldValidation(pimaData, iters);
-    fprintf('Average accuracy across all folds for iters = %d is %.4f\n', iters, acc);
+for iters = [10, 20, 50, 500]
+    [adaboost_cumAcc, adaboostExtra_cumAcc] = crossFoldValidation(pimaData, iters);
+    fprintf('Adaboost Normal: Average accuracy across all folds for iters = %d is %.4f\n', iters, adaboost_cumAcc);
+    fprintf('Adaboost Extra: Average accuracy across all folds for iters = %d is %.4f\n\n', iters, adaboostExtra_cumAcc);
 end
 
-function cumAcc = crossFoldValidation(data, iters)
-    cumAcc = 0.0;
+function [adaboost_cumAcc, adaboostExtra_cumAcc] = crossFoldValidation(data, iters)
+    adaboost_cumAcc = 0.0;
+    adaboostExtra_cumAcc = 0.0;
     for i = 1:10 % 10 folds
         test = data(i*76-75 : i*76, :); % test set = 76 samples
         train = extractTrain(data, i);
@@ -22,9 +24,14 @@ function cumAcc = crossFoldValidation(data, iters)
         
         pred = adaboost(trainX, trainY, testX, iters);
         acc = computeAccuracy(testY, pred); % compute the score, or accuracy
-        cumAcc = cumAcc + acc;
+        adaboost_cumAcc = adaboost_cumAcc + acc;
+        
+        pred = adaboost_extra(trainX, trainY, testX, iters);
+        acc = computeAccuracy(testY, pred);
+        adaboostExtra_cumAcc = adaboostExtra_cumAcc + acc;
     end
-    cumAcc = cumAcc / 10.0; % average accuracy cross all 10 folds
+    adaboost_cumAcc = adaboost_cumAcc / 10.0; % average accuracy cross all 10 folds
+    adaboostExtra_cumAcc = adaboostExtra_cumAcc / 10.0;
 end
 
 % Compute accuracy as number of correctly predicted samples out of all test
